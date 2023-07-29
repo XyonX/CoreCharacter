@@ -6,9 +6,9 @@ public class CorePlayer : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine","EnhancedInput","InputCore", "OnlineSubsystem",});
 
-        PrivateDependencyModuleNames.AddRange(new string[] { });
+        PrivateDependencyModuleNames.AddRange(new string[] { "ModularGameplay", "CoreAbilitySystem" });
 
         // Add any other dependencies or settings here if needed
     }

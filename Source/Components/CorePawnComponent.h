@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Camera/CameraComponent.h"
-#include "CoreCameraComponent.generated.h"
+#include "Components/PawnComponent.h"
+#include "CorePawnComponent.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class COREPLAYER_API UCoreCameraComponent : public UCameraComponent
+class COREPLAYER_API UCorePawnComponent : public UPawnComponent
 {
 	GENERATED_BODY()
 	
