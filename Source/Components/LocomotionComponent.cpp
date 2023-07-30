@@ -1,28 +1,23 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+/******************************************************************************
+* Project Core - Generic UE Project
+* Copyright (c) [2023] [ Joydip chakraborty ]
+* This class is part of the ProjectCore open-source project. 
+* ******************************************************************************/
 
 #include "LocomotionComponent.h"
-
-//#include "EnhancedInputComponent.h"
-//#include "InputAction.h"
-//#include "Kismet/KismetMaterialLibrary.h"
+#include "EnhancedInputComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
-//#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
 #include "Character/CoreCharacterEXTENDED.h"
-#include "Player/CorePlayerController.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 // Sets default values for this component's properties
 ULocomotionComponent::ULocomotionComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
-
-	TurnRate = 1.5f ;
-	LookUpRate = 1.5f ;
+	
+	CharacterMovementData.TurnRate=1.5;
+	CharacterMovementData.LookUpRate=1.5;
 }
 
 
@@ -30,229 +25,175 @@ ULocomotionComponent::ULocomotionComponent()
 void ULocomotionComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	GetCorePlayerController();
-	GetEXTENDEDCharacter();
 
+	GetOwnerReference();
+	BindContextWithSubsystem();
 	
+}
+void ULocomotionComponent::GetOwnerReference()
+{
+	
+	if(Cast<ACharacter>(GetOwner()))
+	{
+		OwnerCharacter=Cast<ACharacter>(GetOwner());
+		OwnerController=UGameplayStatics::GetPlayerController(GetWorld(),0);
+	}
+	else if (Cast<APlayerController>(GetOwner()))
+	{
+		OwnerController=Cast<APlayerController>(GetOwner());
+		OwnerCharacter=Cast<ACharacter>(OwnerController->GetPawn());
+	}
+}
+
+void ULocomotionComponent::MoveForward(float Value)
+{
+	if(OwnerCharacter && OwnerController ==nullptr)
+	{
+		return	;
+	}
+
+	if(Value!=0)
+	{
+		// getting controller rotation and finding the forward vector from control rotation
+		FRotator ControlRotation = OwnerController->GetControlRotation();
+		FRotator YawRot(0.0f, ControlRotation.Yaw, 0.f);
+		FVector ForwardDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+		UE_LOG(LogTemp, Warning, TEXT("Moving Without Freelook") );
+		OwnerCharacter->AddMovementInput(ForwardDirection,Value);
+	}
+
 	
 }
 
-ACorePlayerController* ULocomotionComponent::GetCorePlayerController()
+void ULocomotionComponent::MoveRight(float Value)
 {
-	APlayerController *PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-
-	PlayerControllerReference = Cast<ACorePlayerController>(PlayerController)  ;
-	if (PlayerControllerReference)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("PlayerController  Ref Found "));
-		return  PlayerControllerReference;
-	}
-	else
-	{
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("PlayerController Could not found Returned nullptr!"));
-
-		
-		return  nullptr;
+		return	;
 	}
 	
-}
-
-ACoreCharacterEXTENDED* ULocomotionComponent::GetEXTENDEDCharacter()
-{
-	AActor* MyOwner = GetOwner();
-	ExtendedCharacterRef = Cast<ACoreCharacterEXTENDED>(MyOwner);
-	if(ExtendedCharacterRef)
+	if(Value!=0)
 	{
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Extended Character Ref Found"));
-		return  ExtendedCharacterRef;
+		// getting controller rotation and finding the forward vector from control rotation
+		FRotator ControlRotation = OwnerController->GetControlRotation();
+		FRotator YawRot(0.0f, ControlRotation.Yaw, 0.f);
+		FVector RightDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+		UE_LOG(LogTemp, Warning, TEXT("Moving Without Freelook") );
+		OwnerCharacter->AddMovementInput(RightDirection,Value);
 	}
-	else
-	{
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Extended Character Could not found Returned nullptr!"));
-
-		return  nullptr;
-	}
-	
-	
-}
-
-void ULocomotionComponent::MoveForward(float Value, ACoreCharacter* Character_Ref)
-{
-	if(Character_Ref)
-	{
-		if(Value!=0)
-		{
-			// checking wheathr the controller is available or not 
-			if(PlayerControllerReference != nullptr)
-			{
-				// getting controller rotation and finding the forward vector from control rotation
-				FRotator ControlRotation = PlayerControllerReference->GetControlRotation();
-				FRotator YawRot(0.0f, ControlRotation.Yaw, 0.f);
-				FVector ForwardDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
-				UE_LOG(LogTemp, Warning, TEXT("Moving Without Freelook") );
-				Character_Ref->AddMovementInput(ForwardDirection,Value);
-			}
-		}
 			
-		
-	}
-
-	
-}
-
-void ULocomotionComponent::MoveRight(float Value, ACoreCharacter* Character_Ref)
-{
-	if(PlayerControllerReference)
-	{
-		if(Character_Ref)
-		{
-			if(Value!=0)
-			{
-				// checking wheathr the controller is available or not 
-				if(Character_Ref != nullptr)
-				{
-					// getting controller rotation and finding the forward vector from control rotation
-					FRotator ControlRotation = PlayerControllerReference->GetControlRotation();
-					FRotator YawRot(0.0f, ControlRotation.Yaw, 0.f);
-					FVector RightDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
-					UE_LOG(LogTemp, Warning, TEXT("Moving Without Freelook") );
-					Character_Ref->AddMovementInput(RightDirection,Value);
-				}
-			}
-			
-		
-		}
-	}
 	
 			
 }
 
-void ULocomotionComponent::Turn(float Value, ACoreCharacter* Character_Ref)
+void ULocomotionComponent::Turn(float Value)
 {
-	if(PlayerControllerReference)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
-		if(Character_Ref)
-		{
-			
-			Character_Ref->AddControllerYawInput(Value*TurnRate);
-	
-		}
+		return	;
 	}
+	OwnerController->AddYawInput(Value*CharacterMovementData.TurnRate);
 
 	
 }
 
-void ULocomotionComponent::LookUp(float Value, ACoreCharacter* Character_Ref)
+void ULocomotionComponent::LookUp(float Value)
 {
-	if(PlayerControllerReference)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
-		if(Character_Ref)
-		{
-			
-			Character_Ref->AddControllerPitchInput(Value*LookUpRate);
-	
-		}
+		return	;
 	}
+	OwnerController->AddPitchInput(Value*CharacterMovementData.LookUpRate);
 
 }
-/*
+
 void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 {
-	if(PlayerControllerReference && ExtendedCharacterRef)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
-		if(Value.GetMagnitude() != 0)
+		return	;
+	}
+	if(Value.GetMagnitude() != 0)
 
-		{
-				FRotator ControlRotation = PlayerControllerReference->GetControlRotation();
-				FRotator YawRotation = FRotator(0.0f,ControlRotation.Yaw,0.0f);
-				FVector ForwardVector = FRotationMatrix(YawRotation).GetUnitAxis((EAxis::X));
-				FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis((EAxis::Y));
-				ExtendedCharacterRef->AddMovementInput(ForwardVector,Value[0]);
-				ExtendedCharacterRef->AddMovementInput(RightVector,Value[1]);
-				UE_LOG(LogTemp, Warning, TEXT("Enhanced Move function Called") );
-				//UE_LOG(LogTemp, Warning, TEXT("%s called with Input Action Value %s (magnitude %f)"), *Value.ToString(), Value.GetMagnitude());
-		}
-		
-	}
-	else
 	{
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("ERROR WITH ENHANCED MOVEMENT Function"));
+		UPawnMovementComponent*MovementComponent = OwnerCharacter->GetMovementComponent();
+
+		FRotator CtrlRotation =  OwnerController->GetControlRotation();
+		FRotator YawRot(0.0f, CtrlRotation.Yaw, 0.f);
+	
+		FVector ForwardDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+		FVector RightDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+
+
+		MovementComponent->AddInputVector(ForwardDirection*Value[0]);
+		MovementComponent->AddInputVector(RightDirection*Value[1]);
 	}
+
+
 }
 
 void ULocomotionComponent::EnhancedLook(const FInputActionValue& Value)
 {
-	if(PlayerControllerReference && ExtendedCharacterRef)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
-			ExtendedCharacterRef->AddControllerYawInput(Value[0]*TurnRate);
-			ExtendedCharacterRef->AddControllerPitchInput(Value[1]*LookUpRate);
-			UE_LOG(LogTemp, Warning, TEXT("Enhanced Looking Function Callewd") );
-		
+		return	;
 	}
-	else
-	{
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Error In Enhanced Look Function "));	
-	}
+	OwnerCharacter->AddControllerYawInput(Value[0]*CharacterMovementData.TurnRate);
+	OwnerCharacter->AddControllerPitchInput(Value[1]*CharacterMovementData.LookUpRate);
+	UE_LOG(LogTemp, Warning, TEXT("Enhanced Looking Function Callewd") );
 	
 }
 
-void ULocomotionComponent::BindKeyWithFunction(UInputComponent* PlayerInputComponent)
+bool ULocomotionComponent::BindContextWithSubsystem()
 {
-	if(ExtendedCharacterRef == nullptr)
+	if(OwnerController == nullptr)
 	{
-		GetCorePlayerController();
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Retrying Geting Extended Character ref :BindKeyWithFunction "));
+		return false; ;
 	}
-	
-	if(ExtendedCharacterRef )
+	if(UEnhancedInputLocalPlayerSubsystem * Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(OwnerController->GetLocalPlayer()))
 	{
-		UEnhancedInputComponent*EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
-		if(EIC)
+		Subsystem->ClearAllMappings();
+		Subsystem->AddMappingContext(BaseMappingContext,BaseMappingPriority);
+
+		if(GEngine)
 		{
-				EIC->BindAction(MovementAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedMove);
-				EIC	->BindAction(LookingAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedLook );
-				UE_LOG(LogTemp, Warning, TEXT("Movement Action Binding Done FROM SETUP INPUT") );
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Mapping Context Setup Sucessfull "));
 		}
+		
+		return true;
 	}
 	else
 	{
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Couldnt Bind Function With Keys Error MAYBE CHARACTER REF NOT FOUND "));	
+		return false;
+	}
+	
+
+	
+}
+
+bool ULocomotionComponent::BindActionWithInputSystem(UInputComponent* PlayerInputComponent)
+{
+	if(OwnerCharacter == nullptr)
+	{
+		return false; ;
+	}
+	
+	UEnhancedInputComponent*EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	if(EIC)
+	{
+		EIC->BindAction(MovementAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedMove);
+		EIC	->BindAction(LookingAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedLook );
+		UE_LOG(LogTemp, Warning, TEXT("Movement Action Binding Done FROM SETUP INPUT") );
+		
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 
 }
 
-void ULocomotionComponent::BindContextWithSubsystem()
-{
-	if(PlayerControllerReference == nullptr)
-	{
-		GetCorePlayerController();
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Retrying Geting Player Controller : BindContextWithSubsystem "));
-	}
-	if(PlayerControllerReference)
-	{
-			if(UEnhancedInputLocalPlayerSubsystem * Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerControllerReference->GetLocalPlayer()))
-			{
-				Subsystem->ClearAllMappings();
-				Subsystem->AddMappingContext(BaseMappingContext,BaseMappingPriority);
-			}
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("CONTEXT binding DONE "));	
-	}
-	else
-	{
-		if(GEngine)
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Couldnt Bind Context With Subsystem ,  Error MAYBE PlayerControllerReference NOT FOUND "));	
-	}
-}*/
+
 
 

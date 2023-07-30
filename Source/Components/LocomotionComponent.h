@@ -1,47 +1,42 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/******************************************************************************
+* Project Core - Generic UE Project
+* Copyright (c) [2023] [ Joydip chakraborty ]
+* This class is part of the ProjectCore open-source project. 
+* ******************************************************************************/
 
 #pragma once
 
 #include "CoreMinimal.h"
-//#include "InputActionValue.h"
+#include "InputActionValue.h"
 #include "Components/ActorComponent.h"
+#include "CorePlugin/Data/CharacterMovementData.h"
+
 #include "LocomotionComponent.generated.h"
 
 class ACoreCharacter;
 class ACorePlayerController;
-class ACoreCharacterEXTENDED;
-//UCLASS(ClassGroup=Movement, BlueprintType,meta=(BlueprintSpawnableComponent))
-UCLASS(BlueprintType)
+
+
+UCLASS(ClassGroup=LocomotionComponent, BlueprintType,meta=(BlueprintSpawnableComponent))
 class COREPLAYER_API ULocomotionComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
-	// Sets default values for this component's properties
-	ULocomotionComponent();
-
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-
-	
-private:
-	
-
 public:
 	
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="Locomotion Component")
-	ACoreCharacterEXTENDED* ExtendedCharacterRef;
-	ACorePlayerController * PlayerControllerReference;
-	ACorePlayerController*GetCorePlayerController();
-	ACoreCharacterEXTENDED*GetEXTENDEDCharacter();
+	ULocomotionComponent();
+	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Character")
-	float TurnRate ;
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Character")
-	float LookUpRate ;
-/*
+protected:
+
+	UPROPERTY(VisibleAnywhere , BlueprintReadWrite,Category="Reference")
+	ACharacter* OwnerCharacter;
+	UPROPERTY(VisibleAnywhere , BlueprintReadWrite,Category="Reference")
+	APlayerController*OwnerController;
+	
+	UPROPERTY(EditAnywhere , BlueprintReadWrite,Category="Defaults")
+	FCharacterMovementData CharacterMovementData;
+
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Input Actions")
 	class UInputAction* MovementAction ;
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Input Actions")
@@ -54,33 +49,36 @@ public:
 	// Context THAT CONTAINS INPUT ACTIONS CAN HAVE MORE THAN ONE 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Input mapping Context")
 	class UInputMappingContext*BaseMappingContext;
-	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Input mapping Context")
-	int32 BaseMappingPriority = 0;*/
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Defaults")
+	int32 BaseMappingPriority = 0;
 	
 	
 public:
+	//Access Owner and Setup data
+	void GetOwnerReference ();
 
 	// LEGACY BINDING FUNCTIONS
-
 	UFUNCTION(BlueprintCallable ,Category="Movement",meta=(DeprecatedFunction))
-	void MoveForward (float Value , ACoreCharacter* Character_Ref);
+	void MoveForward (float Value );
+	UFUNCTION(BlueprintCallable )
+	void MoveRight (float Value) ;
 	UFUNCTION(BlueprintCallable ,Category="Movement")
-	void MoveRight (float Value,ACoreCharacter* Character_Ref) ;
+	void Turn (float Value) ;
 	UFUNCTION(BlueprintCallable ,Category="Movement")
-	void Turn (float Value,ACoreCharacter* Character_Ref) ;
-	UFUNCTION(BlueprintCallable ,Category="Movement")
-	void LookUp(float Value,ACoreCharacter* Character_Ref);
+	void LookUp(float Value);
 
+	
+	//Setting up Enhanced Subsystem
 
-	// NEW Functions With Enhanced Input Support
+	bool BindActionWithInputSystem(UInputComponent* PlayerInputComponent);
+	bool BindContextWithSubsystem();
 
-	//UFUNCTION()
-	//void EnhancedMove (const FInputActionValue & Value);
-	//UFUNCTION()
-	//void EnhancedLook (const FInputActionValue & Value);
+	// Enhanced Bindings
+	UFUNCTION()
+	void EnhancedMove (const FInputActionValue & Value);
+	UFUNCTION()
+	void EnhancedLook (const FInputActionValue & Value);
 
-	//void BindKeyWithFunction(UInputComponent* PlayerInputComponent);
-	//void BindContextWithSubsystem();
 
 	
 
