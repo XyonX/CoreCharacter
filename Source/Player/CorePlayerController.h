@@ -1,8 +1,13 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/******************************************************************************
+* Project Core - Generic UE Project
+* Copyright (c) [2023] [ Joydip chakraborty ]
+* This class is part of the ProjectCore open-source project. 
+* ******************************************************************************/
 
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/LocomotionComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "CorePlayerController.generated.h"
 
@@ -15,13 +20,19 @@ class COREPLAYER_API ACorePlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+
+	ACorePlayerController();
 	// for input bindings
+	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	
+protected:
+	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Components")
+	ULocomotionComponent*LocomotionComponent;
 
-
-
-
-
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Reference")
+	ACharacter*ControlledCharacter;
 	
 	
 };

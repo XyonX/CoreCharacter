@@ -1,12 +1,18 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/******************************************************************************
+* Project Core - Generic UE Project
+* Copyright (c) [2023] [ Joydip chakraborty ]
+* This class is part of the ProjectCore open-source project. 
+* ******************************************************************************/
 
 
 #include "CorePlayerController.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
 #include"InputModifiers.h"
+#include "GameFramework/Character.h"
 
 /** Map key to action for mapping context with optional modifiers. */
+
 static void MapKey(UInputMappingContext* InputMappingContext, UInputAction* InputAction, FKey Key, bool bNegate = false, bool bSwizzle = false, EInputAxisSwizzle SwizzleOrder = EInputAxisSwizzle::YXZ)
 {
 	FEnhancedActionKeyMapping& Mapping = InputMappingContext->MapKey(InputAction, Key);
@@ -26,10 +32,24 @@ static void MapKey(UInputMappingContext* InputMappingContext, UInputAction* Inpu
 	}
 }
 
+ACorePlayerController::ACorePlayerController()
+{
+	LocomotionComponent=CreateDefaultSubobject<ULocomotionComponent>("Locomotion Component");
+}
+
+void ACorePlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+	LocomotionComponent->BindContextWithSubsystem();
+}
+
 void ACorePlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
+	ControlledCharacter=Cast<ACharacter>(GetPawn());
+	LocomotionComponent->BindActionWithInputSystem(InputComponent);
 
+	
 	/*
 	// creating the oinput mapping object context
 	BaseMappingContext = NewObject <UInputMappingContext>(this);
