@@ -1,4 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+/******************************************************************************
+* Project Core - Generic UE Project
+* Copyright (c) [2023] [ Joydip chakraborty ]
+* This class is part of the ProjectCore open-source project. 
+* ******************************************************************************/
 
 
 #include "Character/CoreCharacter.h"
@@ -8,25 +12,28 @@
 #include "Components/CoreHealthComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Player/CorePlayerController.h"
-#include "Components/CoreHealthComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/LocomotionComponent.h"
 
 ACoreCharacter::ACoreCharacter()
 {
 
-	
+	/* Sprint Arm*/
 	SpringArm =CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
-	SpringArmADS = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring ArmADS"));
 	SpringArm->SetupAttachment(RootComponent);
-	SpringArmADS->SetupAttachment(RootComponent);
 	SpringArm->bUsePawnControlRotation = true ;
+
+	/* Sprint Arm for ADS */
+	SpringArmADS = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring ArmADS"));
+	SpringArmADS->SetupAttachment(RootComponent);
 	SpringArmADS->bUsePawnControlRotation = true ;
+
+	/* Camera */
 	CameraComponent = CreateDefaultSubobject<UCoreCameraComponent>(TEXT("Camera Component ")) ;
 	check(CameraComponent)
 	CameraComponent->SetupAttachment(SpringArm);
-	
-	PawnComponentExtended = CreateDefaultSubobject<UCorePawnComponentExtended>(TEXT("Pawn Component Extended"));
 
+	/* Health Component */
 	HealthComponent =CreateDefaultSubobject<UCoreHealthComponent>(TEXT("Health Component "));
 
 	
@@ -40,7 +47,7 @@ ACoreCharacter::ACoreCharacter()
 	MeshComp->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));  // Rotate mesh to be X forward since it is exported as Y forward.
 
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = true;
+	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
 	BaseEyeHeight = 80.0f;
@@ -48,14 +55,6 @@ ACoreCharacter::ACoreCharacter()
 
 	UCapsuleComponent*CapsuleComp = GetCapsuleComponent();
 	CapsuleComp->InitCapsuleSize(40.0,90.0f);
-
-	
-	check(MeshComp);
-	// Rotate mesh to be X forward since it is exported as Y forward.
-	MeshComp->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
-	//CameraComponent->SetRelativeLocation(FVector(-300.0f, 0.0f, 75.0f));
-
-	
 
 	
 }
@@ -71,10 +70,7 @@ void ACoreCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
-void ACoreCharacter::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
+/** Getters */
 
 ACorePlayerController* ACoreCharacter::GetCorePlayerController() const
 {
@@ -90,10 +86,8 @@ ACorePlayerController* ACoreCharacter::GetCorePlayerController() const
 	
 }
 
-UCoreAbilitySystemComponent* ACoreCharacter::GetCoreAbilitySystemComponent()
-{
-	return  PawnComponentExtended->GetAbilitySystemComponent();
-}
+
+/** Ability System Events */
 
 void ACoreCharacter::OnAbilitySystemInitialized()
 {
@@ -102,6 +96,8 @@ void ACoreCharacter::OnAbilitySystemInitialized()
 void ACoreCharacter::OnAbilitySystemUninitialized()
 {
 }
+
+/** Player lifecycle management */
 
 void ACoreCharacter::OnDeathStarted(AActor* OwningActor)
 {
@@ -119,6 +115,6 @@ void ACoreCharacter::DestroyDueToDeath()
 {
 }
 
-void ACoreCharacter::UninitAndDestroy()
+void ACoreCharacter::UnInitAndDestroy()
 {
 }
