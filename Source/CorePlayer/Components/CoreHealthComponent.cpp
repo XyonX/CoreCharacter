@@ -5,7 +5,7 @@
 * ******************************************************************************/
 
 
-#include "Components/CoreHealthComponent.h"
+#include "CoreHealthComponent.h"
 #include "CoreAbilitySystemComponent.h"
 
 void UCoreHealthComponent::InitializeWithAbilitySystem(UCoreAbilitySystemComponent* InASC)

@@ -7,7 +7,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Character/CoreCharacter.h"
+#include "CorePlayer/Character/CoreCharacter.h"
 #include "CoreCharacterWithAbilities.generated.h"
 
 /**

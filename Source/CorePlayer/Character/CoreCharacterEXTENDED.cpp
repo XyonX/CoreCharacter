@@ -5,7 +5,7 @@
 * ******************************************************************************/
 
 
-#include "Character/CoreCharacterEXTENDED.h"
+#include "CoreCharacterEXTENDED.h"
 /*
 #include "EnhancedInputComponent.h"
 //#include "Input/InputAction_Movement.h"

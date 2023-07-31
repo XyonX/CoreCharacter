@@ -5,5 +5,5 @@
 * ******************************************************************************/
 
 
-#include "Character/CoreCharacterWithAbilities.h"
+#include "CoreCharacterWithAbilities.h"
 

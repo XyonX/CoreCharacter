@@ -5,15 +5,15 @@
 * ******************************************************************************/
 
 
-#include "Character/CoreCharacter.h"
-#include "Components/CoreCameraComponent.h"
-#include "Components/CorePawnComponentExtended.h"
+#include "CoreCharacter.h"
+#include "CorePlayer/Components/CoreCameraComponent.h"
+#include "CorePlayer/Components/CorePawnComponentExtended.h"
 #include"GameFramework/SpringArmComponent.h"
-#include "Components/CoreHealthComponent.h"
+#include "CorePlayer/Components/CoreHealthComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Player/CorePlayerController.h"
+#include "CorePlayer/Player/CorePlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Components/LocomotionComponent.h"
+#include "CorePlayer/Components/LocomotionComponent.h"
 
 ACoreCharacter::ACoreCharacter()
 {

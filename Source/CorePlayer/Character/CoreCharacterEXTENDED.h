@@ -8,7 +8,7 @@
 
 #include "CoreMinimal.h"
 #include "InputActionValue.h"
-#include "Character/CoreCharacter.h"
+#include "CorePlayer/Character/CoreCharacter.h"
 #include "Interfaces/OnlineSessionInterface.h"
 //#include "InventorySystem/CoreInventorySystemComponent.h"
 

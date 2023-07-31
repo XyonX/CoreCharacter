@@ -7,7 +7,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/LocomotionComponent.h"
+#include "CorePlayer/Components/LocomotionComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "CorePlayerController.generated.h"
 
@@ -25,6 +25,7 @@ public:
 	// for input bindings
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	virtual void OnPossess(APawn* InPawn) override;
 	
 protected:
 	
