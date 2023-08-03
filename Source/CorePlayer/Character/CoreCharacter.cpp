@@ -55,6 +55,9 @@ ACoreCharacter::ACoreCharacter()
 
 	UCapsuleComponent*CapsuleComp = GetCapsuleComponent();
 	CapsuleComp->InitCapsuleSize(40.0,90.0f);
+	
+
+	GetCharacterMovement()->bOrientRotationToMovement=true;
 
 	
 }

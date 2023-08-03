@@ -10,6 +10,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "CorePlayer/Character/CoreCharacterEXTENDED.h"
+#include "CorePlugin/Helpers/DelegateHelper.h"
 #include "CorePlugin/Helpers/InputHandlerHelper.h"
 #include "GameFramework/PawnMovementComponent.h"
 
@@ -43,8 +44,6 @@ void ULocomotionComponent::Run()
 	ConfigureMappingContext();
 	ConfigureInputActionWithKey();
 	BindContextWithSubsystem();
-	if(GEngine)
-		GEngine->AddOnScreenDebugMessage(-1,5,FColor::Green,TEXT("Component fucntion called"));
 }
 
 void ULocomotionComponent::GetOwnerReference()
@@ -52,32 +51,14 @@ void ULocomotionComponent::GetOwnerReference()
 	
 	if(Cast<ACharacter>(GetOwner()))
 	{
-		if(GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Locomotion component owned by character class "));
-		}
 		OwnerPawn=Cast<ACharacter>(GetOwner());
 		OwnerController=UGameplayStatics::GetPlayerController(GetWorld(),0);
 	}
 
 	if (Cast<APlayerController>(GetOwner()))
 	{
-		if(GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Locomotion component owned by controller class "));
-		}
 		OwnerController=Cast<APlayerController>(GetOwner());
 		OwnerPawn=OwnerController->GetPawn();
-		
-		if(OwnerPawn)
-		{
-			if(GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("CONTROLLER PAWN FOUND   "));
-			}
-			
-		}
-		
 		
 	}
 }
@@ -169,12 +150,13 @@ void ULocomotionComponent::LookUp(float Value)
 
 void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 {
-	if(GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Enhanced move called "));
-	}
+	
 	if(OwnerPawn && OwnerController ==nullptr)
 	{
+		if(GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("No valid character or controller found   "));
+		}
 		return	;
 	}
 	if(Value.GetMagnitude() != 0)
@@ -191,6 +173,13 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 
 		MovementComponent->AddInputVector(ForwardDirection*Value[0]);
 		MovementComponent->AddInputVector(RightDirection*Value[1]);
+
+		FVector Velocity  = OwnerPawn->GetMovementComponent()->Velocity;
+
+		ADelegateHelper::Transmitter_Velocity.Broadcast(Velocity);
+		ADelegateHelper::Transmitter_CharacterRotation.Broadcast(OwnerPawn->GetActorRotation());
+		ADelegateHelper::Transmitter_ControlRotation.Broadcast(OwnerController->GetControlRotation());
+		
 	}
 
 
@@ -198,17 +187,17 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 
 void ULocomotionComponent::EnhancedLook(const FInputActionValue& Value)
 {
-	if(GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Enhanced Lookup Called "));
-	}
+
 	if(OwnerPawn && OwnerController ==nullptr)
 	{
+		if(GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("No valid character or controller found   "));
+		}
 		return	;
 	}
 	OwnerPawn->AddControllerYawInput(Value[0]*CharacterMovementData.TurnRate);
 	OwnerPawn->AddControllerPitchInput(Value[1]*CharacterMovementData.LookUpRate);
-	UE_LOG(LogTemp, Warning, TEXT("Enhanced Looking Function Callewd") );
 	
 }
 
@@ -216,22 +205,25 @@ bool ULocomotionComponent::BindContextWithSubsystem()
 {
 	if(OwnerController == nullptr)
 	{
-		return false; ;
+		if(GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Context  binding with subsystem failed , no controller found  "));
+		}
+		return false	;
 	}
 	if(UEnhancedInputLocalPlayerSubsystem * Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(OwnerController->GetLocalPlayer()))
 	{
 		Subsystem->ClearAllMappings();
 		Subsystem->AddMappingContext(BaseMappingContext,BaseMappingPriority);
-
-		if(GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Mapping Context Setup Sucessfull "));
-		}
 		
 		return true;
 	}
 	else
 	{
+		if(GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("  context binding failed ,Enable Enhanced input sytem from the project setting  "));
+		}
 		return false;
 	}
 	
@@ -258,7 +250,7 @@ bool ULocomotionComponent::BindFunctionWithInputAction(UInputComponent* PlayerIn
 	{
 		if(GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Eic cast failed "));
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("  BindFunction failed with action ,Enable Enhanced input sytem from the project setting  "));
 		}
 		return false;
 	}
@@ -266,11 +258,6 @@ bool ULocomotionComponent::BindFunctionWithInputAction(UInputComponent* PlayerIn
 	EIC->BindAction(MovementAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedMove);
 	EIC	->BindAction(LookingAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedLook );
 	
-
-	if(GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Key Binding Sucessfull "));
-	}
 	return true;
 }
 
