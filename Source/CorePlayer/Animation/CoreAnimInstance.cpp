@@ -10,14 +10,11 @@
 #include "CorePlugin/Helpers/DelegateHelper.h"
 
 UCoreAnimInstance::UCoreAnimInstance()
-: AnimationData() // Initializes the AnimationData struct with default values (e.g., 0.0f and false)
+: CurrentAnimationData() // Initializes the CurrentAnimationData struct with default values (e.g., 0.0f and false)
 
 {
-	DefaultAnimationData.Velocity=400;
-	DefaultAnimationData.bIsJumping=false;
-	
-	// Initialize default values for AnimationData
-	AnimationData=DefaultAnimationData;
+
+	CurrentAnimationData=DefaultAnimationData;
 }
 
 void UCoreAnimInstance::NativeInitializeAnimation()
@@ -25,24 +22,73 @@ void UCoreAnimInstance::NativeInitializeAnimation()
 	
 	Proxy = MakeShared<FCoreAnimInstanceProxy>(this);
 	// Send a reference of the anim data to the proxy class
-	Proxy->UpdateAnimationData(AnimationData);
+	Proxy->UpdateAnimationData(CurrentAnimationData);
 
-	ADelegateHelper::Delegate_UpdateAnimationDataDelegate.AddDynamic(this,&UCoreAnimInstance::Receiver_AnimationData);
+	ADelegateHelper::Transmitter_AnimationData.AddDynamic(this,&UCoreAnimInstance::Receiver_AnimationData);
+	
+	ADelegateHelper::Transmitter_Velocity.AddDynamic(this,&UCoreAnimInstance::Receiver_Velocity);
+	ADelegateHelper::Transmitter_CharacterWorldLocation.AddDynamic(this,&UCoreAnimInstance::Receiver_CharacterWorldLocation);
+	ADelegateHelper::Transmitter_MovementDirection.AddDynamic(this,&UCoreAnimInstance::UCoreAnimInstance::Receiver_MovementDirection);
+	
+
+	ADelegateHelper::Transmitter_ControlRotation.AddDynamic(this,&UCoreAnimInstance::Receiver_ControlRotation);
+	ADelegateHelper::Transmitter_CharacterRotation.AddDynamic(this,&UCoreAnimInstance::Receiver_ControlRotation);
+
+
+	ADelegateHelper::Transmitter_JumpingStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_JumpingStatus);
+	ADelegateHelper::Transmitter_CrouchStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_CrouchStatus);
+	ADelegateHelper::Transmitter_InAirStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_InAirStatus);
 	
 }
 
 void UCoreAnimInstance::Receiver_AnimationData(FAnimationData InAnimData)
 {
+}
+
+void UCoreAnimInstance::Receiver_Velocity(FVector InValue)
+{
+	CurrentAnimationData.Velocity =InValue.Size();
+
+	if(GEngine)
+	GEngine->AddOnScreenDebugMessage(-1,5,FColor::Blue,*FString::Printf(TEXT(" Velocity: %f"),InValue.Size()));
 	
 }
 
-
-//Updated the anim data In the Animation instance class
-void UCoreAnimInstance::UpdateAnimationData(FAnimationData InAnimationData)
+void UCoreAnimInstance::Receiver_CharacterWorldLocation(FVector InValue)
 {
-	AnimationData=InAnimationData;
+	CurrentAnimationData.CharacterWorldLocation=InValue;
+	
 }
 
+void UCoreAnimInstance::Receiver_MovementDirection(FVector InValue)
+{
+	CurrentAnimationData.MovementDirection=InValue;
+}
+
+void UCoreAnimInstance::Receiver_ControlRotation(FRotator InValue)
+{
+	CurrentAnimationData.ControllerWorldRotation =InValue;
+}
+
+void UCoreAnimInstance::Receiver_CharacterRotation(FRotator InValue)
+{
+	CurrentAnimationData.CharacterWorldRotation= InValue;
+}
+
+void UCoreAnimInstance::Receiver_JumpingStatus(bool InValue)
+{
+	CurrentAnimationData.bIsJumping=InValue;
+}
+
+void UCoreAnimInstance::Receiver_CrouchStatus(bool InValue)
+{
+	CurrentAnimationData.bIsCrouching=InValue;
+}
+
+void UCoreAnimInstance::Receiver_InAirStatus(bool InValue)
+{
+	CurrentAnimationData.bIsInAir=InValue;
+}
 
 
 // Add more functions and logic for other animation calculations if needed

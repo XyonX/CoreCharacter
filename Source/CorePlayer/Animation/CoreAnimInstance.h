@@ -25,23 +25,64 @@ public:
 	//Function only called at the starting
 	virtual void NativeInitializeAnimation() override;
 
-	//Ignore this function to Increase performance
-	// Called every frame
-	//virtual void NativeUpdateAnimation(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	void UpdateAnimationData(FAnimationData InAnimationData){CurrentAnimationData=InAnimationData;};
+
+	
+	/** Animation data Receiver */
 	void Receiver_AnimationData (FAnimationData InAnimData);
 
-	// Function to update animation data
-	UFUNCTION(BlueprintCallable, Category = "Animation")
-	void UpdateAnimationData(FAnimationData InAnimationData);
+	void Receiver_Velocity (FVector InValue);
+	void Receiver_CharacterWorldLocation (FVector InValue);
+	void Receiver_MovementDirection (FVector InValue);
+	
+	void Receiver_ControlRotation (FRotator InValue);
+	void Receiver_CharacterRotation (FRotator InValue);
+
+	void Receiver_JumpingStatus (bool InValue);
+	void Receiver_CrouchStatus (bool InValue);
+	void Receiver_InAirStatus (bool InValue);
+
+
 	
 protected:
 
 	/** Default Animation data to start with */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Data")
 	FAnimationData DefaultAnimationData;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Data")
+	FAnimationData CurrentAnimationData;
 	
-	// Animation data that can be accessed from Blueprint
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Data")
-	FAnimationData AnimationData;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
+	float MovementOffset;
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
+	float MovementOffsetAccel ;
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
+	float Character_Yaw;
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
+	float Character_Yaw_LastFrame;
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
+	float Root_Yaw_Offset_PerFrame;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
+	bool bIsAccelerating ;
+
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
+	float Root_Yaw_Offset;
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
+	float PivotTime;
+	
+	float NormalTolerance ;
+	
+
 
 	TSharedPtr<FCoreAnimInstanceProxy>Proxy;
 	
