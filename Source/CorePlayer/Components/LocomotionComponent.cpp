@@ -175,7 +175,7 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 		MovementComponent->AddInputVector(RightDirection*Value[1]);
 
 		FVector Velocity  = OwnerPawn->GetMovementComponent()->Velocity;
-
+		
 		ADelegateHelper::Transmitter_Velocity.Broadcast(Velocity);
 		ADelegateHelper::Transmitter_CharacterRotation.Broadcast(OwnerPawn->GetActorRotation());
 		ADelegateHelper::Transmitter_ControlRotation.Broadcast(OwnerController->GetControlRotation());

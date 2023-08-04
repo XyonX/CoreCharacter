@@ -19,13 +19,12 @@ UCoreAnimInstance::UCoreAnimInstance()
 
 void UCoreAnimInstance::NativeInitializeAnimation()
 {
-	
-	Proxy = MakeShared<FCoreAnimInstanceProxy>(this);
+	Super::NativeInitializeAnimation();
+	//Proxy = MakeShared<FCoreAnimInstanceProxy>(this);
 	// Send a reference of the anim data to the proxy class
-	Proxy->UpdateAnimationData(CurrentAnimationData);
+	//Proxy->UpdateAnimationData(CurrentAnimationData);
 
 	ADelegateHelper::Transmitter_AnimationData.AddDynamic(this,&UCoreAnimInstance::Receiver_AnimationData);
-	
 	ADelegateHelper::Transmitter_Velocity.AddDynamic(this,&UCoreAnimInstance::Receiver_Velocity);
 	ADelegateHelper::Transmitter_CharacterWorldLocation.AddDynamic(this,&UCoreAnimInstance::Receiver_CharacterWorldLocation);
 	ADelegateHelper::Transmitter_MovementDirection.AddDynamic(this,&UCoreAnimInstance::UCoreAnimInstance::Receiver_MovementDirection);
@@ -38,7 +37,6 @@ void UCoreAnimInstance::NativeInitializeAnimation()
 	ADelegateHelper::Transmitter_JumpingStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_JumpingStatus);
 	ADelegateHelper::Transmitter_CrouchStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_CrouchStatus);
 	ADelegateHelper::Transmitter_InAirStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_InAirStatus);
-	
 }
 
 void UCoreAnimInstance::Receiver_AnimationData(FAnimationData InAnimData)
@@ -47,15 +45,20 @@ void UCoreAnimInstance::Receiver_AnimationData(FAnimationData InAnimData)
 
 void UCoreAnimInstance::Receiver_Velocity(FVector InValue)
 {
+	/*
+	if(GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1,5,FColor::Blue,*FString::Printf(TEXT(" Velocity: %f"),InValue.Size()));
+	}*/
 	CurrentAnimationData.Velocity =InValue.Size();
 
-	if(GEngine)
-	GEngine->AddOnScreenDebugMessage(-1,5,FColor::Blue,*FString::Printf(TEXT(" Velocity: %f"),InValue.Size()));
+
 	
 }
 
 void UCoreAnimInstance::Receiver_CharacterWorldLocation(FVector InValue)
 {
+
 	CurrentAnimationData.CharacterWorldLocation=InValue;
 	
 }

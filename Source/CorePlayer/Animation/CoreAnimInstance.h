@@ -31,17 +31,25 @@ public:
 
 	
 	/** Animation data Receiver */
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_AnimationData (FAnimationData InAnimData);
 
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_Velocity (FVector InValue);
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_CharacterWorldLocation (FVector InValue);
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_MovementDirection (FVector InValue);
-	
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_ControlRotation (FRotator InValue);
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_CharacterRotation (FRotator InValue);
 
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_JumpingStatus (bool InValue);
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_CrouchStatus (bool InValue);
+	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_InAirStatus (bool InValue);
 
 
