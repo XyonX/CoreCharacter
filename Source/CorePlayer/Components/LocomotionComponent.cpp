@@ -12,7 +12,9 @@
 #include "CorePlayer/Character/CoreCharacterEXTENDED.h"
 #include "CorePlugin/Helpers/DelegateHelper.h"
 #include "CorePlugin/Helpers/InputHandlerHelper.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values for this component's properties
 ULocomotionComponent::ULocomotionComponent()
@@ -150,6 +152,7 @@ void ULocomotionComponent::LookUp(float Value)
 
 void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 {
+
 	
 	if(OwnerPawn && OwnerController ==nullptr)
 	{
@@ -159,30 +162,34 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 		}
 		return	;
 	}
-	if(Value.GetMagnitude() != 0)
 
-	{
-		UPawnMovementComponent*MovementComponent = OwnerPawn->GetMovementComponent();
+	UPawnMovementComponent*MovementComponent = OwnerPawn->GetMovementComponent();
 
-		FRotator CtrlRotation =  OwnerController->GetControlRotation();
-		FRotator YawRot(0.0f, CtrlRotation.Yaw, 0.f);
+	FRotator ControlRotation = OwnerController->GetControlRotation();
 	
-		FVector ForwardDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
-		FVector RightDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
+	FRotator YawRot(0.0f, ControlRotation.Yaw, 0.f);
+
+	FVector ForwardDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
+	FVector RightDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 
 
-		MovementComponent->AddInputVector(ForwardDirection*Value[0]);
-		MovementComponent->AddInputVector(RightDirection*Value[1]);
-
-		FVector Velocity  = OwnerPawn->GetMovementComponent()->Velocity;
-		
-		ADelegateHelper::Transmitter_Velocity.Broadcast(Velocity);
-		ADelegateHelper::Transmitter_CharacterRotation.Broadcast(OwnerPawn->GetActorRotation());
-		ADelegateHelper::Transmitter_ControlRotation.Broadcast(OwnerController->GetControlRotation());
-		
-	}
+	MovementComponent->AddInputVector(ForwardDirection*Value[0]);
+	MovementComponent->AddInputVector(RightDirection*Value[1]);
 
 
+	
+	ADelegateHelper::Transmitter_Velocity.Broadcast(OwnerPawn->GetMovementComponent()->Velocity);
+	ADelegateHelper::Transmitter_CharacterRotation.Broadcast(OwnerPawn->GetActorRotation());
+	ADelegateHelper::Transmitter_ControlRotation.Broadcast(ControlRotation);
+
+
+
+
+}
+
+void ULocomotionComponent::OnMovementButtonReleased(const FInputActionValue& Value)
+{
+	ADelegateHelper::Transmitter_Velocity.Broadcast(FVector::ZeroVector);
 }
 
 void ULocomotionComponent::EnhancedLook(const FInputActionValue& Value)
@@ -198,6 +205,8 @@ void ULocomotionComponent::EnhancedLook(const FInputActionValue& Value)
 	}
 	OwnerPawn->AddControllerYawInput(Value[0]*CharacterMovementData.TurnRate);
 	OwnerPawn->AddControllerPitchInput(Value[1]*CharacterMovementData.LookUpRate);
+
+	//ADelegateHelper::Transmitter_ControlRotation.Broadcast(OwnerController->GetControlRotation());
 	
 }
 
@@ -256,6 +265,7 @@ bool ULocomotionComponent::BindFunctionWithInputAction(UInputComponent* PlayerIn
 	}
 	
 	EIC->BindAction(MovementAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedMove);
+	EIC->BindAction(MovementAction,ETriggerEvent::Completed,this,&ULocomotionComponent::OnMovementButtonReleased);
 	EIC	->BindAction(LookingAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedLook );
 	
 	return true;

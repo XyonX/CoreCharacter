@@ -30,7 +30,7 @@ public:
 
 //protected:
 public:
-
+	
 	UPROPERTY(VisibleAnywhere , BlueprintReadWrite,Category="Reference")
 	APawn* OwnerPawn;
 	UPROPERTY(VisibleAnywhere , BlueprintReadWrite,Category="Reference")
@@ -55,7 +55,7 @@ public:
 	class UInputMappingContext*BaseMappingContext;
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Defaults")
 	int32 BaseMappingPriority = 0;
-	
+
 	
 public:
 	//Access Owner and Setup data
@@ -83,6 +83,8 @@ public:
 	// Enhanced Bindings
 	UFUNCTION()
 	void EnhancedMove (const FInputActionValue & Value);
+	UFUNCTION()
+	void OnMovementButtonReleased (const FInputActionValue & Value);
 	UFUNCTION()
 	void EnhancedLook (const FInputActionValue & Value);
 
