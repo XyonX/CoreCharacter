@@ -21,30 +21,36 @@ class COREPLAYER_API UCoreAnimInstance : public UAnimInstance
 
 public:
 	UCoreAnimInstance();
-
-	//Function only called at the starting
+	// Override the native functions
 	virtual void NativeInitializeAnimation() override;
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
+	// Override the proxy functions
+	virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
+	virtual void DestroyAnimInstanceProxy(FAnimInstanceProxy* InProxy) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Animation")
-	void UpdateAnimationData(FAnimationData InAnimationData){CurrentAnimationData=InAnimationData;};
+	// Get the proxy on the game thread
+	FCoreAnimInstanceProxy* GetProxyOnGameThread();
+
+private:
+	// A pointer to the custom proxy class
+	FCoreAnimInstanceProxy* Proxy;
+	
+
+public:
 
 	
 	/** Animation data Receiver */
 	UFUNCTION(BlueprintCallable, Category = "Animation")
-	void Receiver_AnimationData (FAnimationData InAnimData);
-
+	void Receiver_AnimationData (FCalculatedAnimationData InAnimData);
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_Velocity (FVector InValue);
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_CharacterWorldLocation (FVector InValue);
 	UFUNCTION(BlueprintCallable, Category = "Animation")
-	void Receiver_MovementDirection (FVector InValue);
-	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_ControlRotation (FRotator InValue);
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_CharacterRotation (FRotator InValue);
-
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_JumpingStatus (bool InValue);
 	UFUNCTION(BlueprintCallable, Category = "Animation")
@@ -52,16 +58,27 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_InAirStatus (bool InValue);
 
+	
+	//Blueprint Exposed Setters
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="AnimInstance")
+    float CharacterYawInterpTime;
+
+	
+	//Locally used variables
+
+	UPROPERTY()
+	ACharacter*OwnerCharacter;
+	
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Data")
+	FRawAnimationData RawAnimationData;
+	
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Data")
+	FCalculatedAnimationData CalculatedAnimationData;
 
 	
 protected:
 
-	/** Default Animation data to start with */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Data")
-	FAnimationData DefaultAnimationData;
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Data")
-	FAnimationData CurrentAnimationData;
 	
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category="AnimInstance")
@@ -89,9 +106,5 @@ protected:
 	float PivotTime;
 	
 	float NormalTolerance ;
-	
-
-
-	TSharedPtr<FCoreAnimInstanceProxy>Proxy;
 	
 };
