@@ -10,6 +10,7 @@
 #include "CorePlugin/Helpers/DelegateHelper.h"
 #include "GameFramework/Character.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Threads/AnimationCalculator.h"
 
 UCoreAnimInstance::UCoreAnimInstance()
 : RawAnimationData() // Initializes the RawAnimationData struct with default values (e.g., 0.0f and false)
@@ -25,11 +26,19 @@ void UCoreAnimInstance::NativeInitializeAnimation()
 	Super::NativeInitializeAnimation();
 	
 	// Initialize the proxy with this anim instance
-	Proxy = &Super::GetProxyOnGameThread<FCoreAnimInstanceProxy>();
-	
+	//Proxy = &Super::GetProxyOnGameThread<FCoreAnimInstanceProxy>();
 
 	OwnerCharacter = Cast<ACharacter>(GetOwningActor());
 
+	/** Creating Runnable Thread */
+	
+	// Create a new instance of FAnimationCalculator and pass it references to the shared raw data variable, the shared calculated data variable, and the critical section
+	AnimationCalculator = new FAnimationCalculator(RawAnimationData, CalculatedAnimationData, CriticalSection);
+
+	// Create a new instance of FRunnableThread and pass it a pointer to the FAnimationCalculator instance and a name for the thread
+	AnimationCalculatorThread = FRunnableThread::Create(AnimationCalculator, TEXT("AnimationCalculatorThread"));
+
+	/** Binding Delegates */ 
 	ADelegateHelper::Transmitter_AnimationData.AddDynamic(this,&UCoreAnimInstance::Receiver_AnimationData);
 	ADelegateHelper::Transmitter_Velocity.AddDynamic(this,&UCoreAnimInstance::Receiver_Velocity);
 	ADelegateHelper::Transmitter_CharacterWorldLocation.AddDynamic(this,&UCoreAnimInstance::Receiver_CharacterWorldLocation);
@@ -42,13 +51,34 @@ void UCoreAnimInstance::NativeInitializeAnimation()
 	ADelegateHelper::Transmitter_CrouchStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_CrouchStatus);
 	ADelegateHelper::Transmitter_InAirStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_InAirStatus);
 }
-
+/*
 void UCoreAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
-	Proxy->SyncTo(this);
-}
+	//Proxy->SyncTo(this);
+}*/
 
+void UCoreAnimInstance::NativeUninitializeAnimation()
+{
+	// Call the base class function first
+	Super::NativeUninitializeAnimation();
+
+	// Stop and delete the thread if it exists
+	if (AnimationCalculatorThread)
+	{
+		AnimationCalculatorThread->Kill(true);
+		delete AnimationCalculatorThread;
+		AnimationCalculatorThread = nullptr;
+	}
+
+	// Delete the FAnimationCalculator instance if it exists
+	if (AnimationCalculator)
+	{
+		delete AnimationCalculator;
+		AnimationCalculator = nullptr;
+	}
+}
+/*
 FAnimInstanceProxy* UCoreAnimInstance::CreateAnimInstanceProxy()
 {
 	return new FCoreAnimInstanceProxy(this);
@@ -64,7 +94,7 @@ FCoreAnimInstanceProxy* UCoreAnimInstance::GetProxyOnGameThread()
 	// Cast the base proxy class to the custom proxy class
 	return &Super::GetProxyOnGameThread<FCoreAnimInstanceProxy>();
 }
-
+*/
 void UCoreAnimInstance::Receiver_AnimationData(FCalculatedAnimationData InAnimData)
 {
 	
@@ -72,17 +102,20 @@ void UCoreAnimInstance::Receiver_AnimationData(FCalculatedAnimationData InAnimDa
 
 void UCoreAnimInstance::Receiver_Velocity(FVector InValue)
 {
+	CriticalSection.Lock();
+		RawAnimationData.Velocity =InValue;
+	CriticalSection.Unlock();
 
-	RawAnimationData.Velocity =InValue;
-	CalculatedAnimationData.Velocity=InValue.Size();
+	// Set the new data flag to true
+	AnimationCalculator->NewDataAvailable = true;
 	
-
+/*
 	FRotator ActorRot =RawAnimationData.CharacterRotation;
 	FRotator TargetRot = FRotator(ActorRot.Pitch, RawAnimationData.ControllerRotation.Yaw, ActorRot.Roll);
 	
 
 	FRotator NewCharacterRotation = FMath::RInterpTo(ActorRot, TargetRot, GetWorld()->GetDeltaSeconds(), CharacterYawInterpTime);
-	//OwnerCharacter->SetActorRotation(NewCharacterRotation);
+	//OwnerCharacter->SetActorRotation(NewCharacterRotation);*/
 	
 	
 }
