@@ -27,22 +27,22 @@ public:
 	//Overrides
 	
 	// Override the Initialize function to copy any data from the AnimInstance that you need for animation calculations
-	virtual void Initialize(UAnimInstance* InAnimInstance) override;
+	//virtual void Initialize(UAnimInstance* InAnimInstance) override;
 
 	// Override the PostEvaluate function to copy any data back to the game thread that you need for animation post-processing
-	virtual void PostEvaluate(UAnimInstance* InAnimInstance) override;
+	//virtual void PostEvaluate(UAnimInstance* InAnimInstance) override;
 	
 	//Sync
 	
 	// Sync any data from the anim instance to the proxy
-	void SyncFrom(UCoreAnimInstance* Instance);
+	//void SyncFrom(UCoreAnimInstance* Instance);
 
 	// Sync any data from the proxy to the anim instance
-	void SyncTo(UCoreAnimInstance* Instance);
+	//void SyncTo(UCoreAnimInstance* Instance);
 
 
 	//Calculation Function
-	void CalculateAnimationData ();
+	//void CalculateAnimationData ();
 	
 protected:
 	

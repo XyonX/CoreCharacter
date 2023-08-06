@@ -28,7 +28,7 @@ FCoreAnimInstanceProxy::~FCoreAnimInstanceProxy()
 {
 	
 }
-
+/*
 void FCoreAnimInstanceProxy::Initialize(UAnimInstance* InAnimInstance)
 {
 	Super::Initialize(InAnimInstance);
@@ -53,12 +53,12 @@ void FCoreAnimInstanceProxy::SyncFrom(UCoreAnimInstance* Instance)
 	// Sync any data from the animation instace to the proxy
 
 	// For example, copy the animation data from the animation instace to the proxy
-	RawAnimationData=Instance->RawAnimationData;
+	//RawAnimationData=Instance->RawAnimationData;
 }
 
 void FCoreAnimInstanceProxy::SyncTo(UCoreAnimInstance* Instance)
 {
-	Instance->CalculatedAnimationData=CalculatedAnimationData;
+	//Instance->CalculatedAnimationData=CalculatedAnimationData;
 }
 
 void FCoreAnimInstanceProxy::CalculateAnimationData()
