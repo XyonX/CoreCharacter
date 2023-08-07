@@ -24,6 +24,10 @@ ULocomotionComponent::ULocomotionComponent()
 	DefaultMovementData.LookUpRate=1.5;
 	CharacterMovementData=DefaultMovementData;
 	BaseMappingPriority=0;
+
+	MaxMovementSpeed.WalkSpeed=200;
+	MaxMovementSpeed.JogSpeed=400;
+	MaxMovementSpeed.SprintSpeed=600;
 }
 
 
@@ -33,6 +37,7 @@ void ULocomotionComponent::BeginPlay()
 	Super::BeginPlay();
 	
 	GetOwnerReference();
+	SetCharacterDefaultSpeed();
 	BindContextWithSubsystem();
 	BindFunctionWithInputAction(OwnerController->InputComponent);
 
@@ -53,27 +58,36 @@ void ULocomotionComponent::GetOwnerReference()
 	
 	if(Cast<ACharacter>(GetOwner()))
 	{
-		OwnerPawn=Cast<ACharacter>(GetOwner());
+		OwnerCharacter=Cast<ACharacter>(GetOwner());
 		OwnerController=UGameplayStatics::GetPlayerController(GetWorld(),0);
 	}
 
 	if (Cast<APlayerController>(GetOwner()))
 	{
 		OwnerController=Cast<APlayerController>(GetOwner());
-		OwnerPawn=OwnerController->GetPawn();
+		OwnerCharacter=Cast<ACharacter>(OwnerController->GetPawn());
 		
+	}
+}
+
+void ULocomotionComponent::SetCharacterDefaultSpeed()
+{
+	if(OwnerCharacter)
+	{
+		OwnerCharacterMovementComponent= OwnerCharacter->GetCharacterMovement();
+		OwnerCharacterMovementComponent->MaxWalkSpeed=MaxMovementSpeed.JogSpeed;
 	}
 }
 
 void ULocomotionComponent::ConfigureInputAction()
 {
-	MovementAction= UInputHandlerHelper::CreateInputAction(OwnerPawn,EInputActionValueType::Axis2D);
-	LookingAction=UInputHandlerHelper::CreateInputAction(OwnerPawn,EInputActionValueType::Axis2D);
+	MovementAction= UInputHandlerHelper::CreateInputAction(OwnerCharacter,EInputActionValueType::Axis2D);
+	LookingAction=UInputHandlerHelper::CreateInputAction(OwnerCharacter,EInputActionValueType::Axis2D);
 }
 
 void ULocomotionComponent::ConfigureMappingContext()
 {
-	BaseMappingContext=UInputHandlerHelper::CreateInputMappingContext(OwnerPawn);
+	BaseMappingContext=UInputHandlerHelper::CreateInputMappingContext(OwnerCharacter);
 }
 
 void ULocomotionComponent::ConfigureInputActionWithKey()
@@ -90,7 +104,7 @@ void ULocomotionComponent::ConfigureInputActionWithKey()
 
 void ULocomotionComponent::MoveForward(float Value)
 {
-	if(OwnerPawn && OwnerController ==nullptr)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
 		return	;
 	}
@@ -102,7 +116,7 @@ void ULocomotionComponent::MoveForward(float Value)
 		FRotator YawRot(0.0f, ControlRotation.Yaw, 0.f);
 		FVector ForwardDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::X);
 		UE_LOG(LogTemp, Warning, TEXT("Moving Without Freelook") );
-		OwnerPawn->AddMovementInput(ForwardDirection,Value);
+		OwnerCharacter->AddMovementInput(ForwardDirection,Value);
 	}
 
 	
@@ -110,7 +124,7 @@ void ULocomotionComponent::MoveForward(float Value)
 
 void ULocomotionComponent::MoveRight(float Value)
 {
-	if(OwnerPawn && OwnerController ==nullptr)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
 		return	;
 	}
@@ -122,7 +136,7 @@ void ULocomotionComponent::MoveRight(float Value)
 		FRotator YawRot(0.0f, ControlRotation.Yaw, 0.f);
 		FVector RightDirection = FRotationMatrix(YawRot).GetUnitAxis(EAxis::Y);
 		UE_LOG(LogTemp, Warning, TEXT("Moving Without Freelook") );
-		OwnerPawn->AddMovementInput(RightDirection,Value);
+		OwnerCharacter->AddMovementInput(RightDirection,Value);
 	}
 			
 	
@@ -131,7 +145,7 @@ void ULocomotionComponent::MoveRight(float Value)
 
 void ULocomotionComponent::Turn(float Value)
 {
-	if(OwnerPawn && OwnerController ==nullptr)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
 		return	;
 	}
@@ -142,7 +156,7 @@ void ULocomotionComponent::Turn(float Value)
 
 void ULocomotionComponent::LookUp(float Value)
 {
-	if(OwnerPawn && OwnerController ==nullptr)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
 		return	;
 	}
@@ -154,7 +168,7 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 {
 
 	
-	if(OwnerPawn && OwnerController ==nullptr)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
 		if(GEngine)
 		{
@@ -163,7 +177,7 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 		return	;
 	}
 
-	UPawnMovementComponent*MovementComponent = OwnerPawn->GetMovementComponent();
+	UPawnMovementComponent*MovementComponent = OwnerCharacter->GetMovementComponent();
 
 	FRotator ControlRotation = OwnerController->GetControlRotation();
 	
@@ -178,8 +192,8 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 
 
 	
-	ADelegateHelper::Transmitter_Velocity.Broadcast(OwnerPawn->GetMovementComponent()->Velocity);
-	ADelegateHelper::Transmitter_CharacterRotation.Broadcast(OwnerPawn->GetActorRotation());
+	ADelegateHelper::Transmitter_Velocity.Broadcast(OwnerCharacter->GetMovementComponent()->Velocity);
+	ADelegateHelper::Transmitter_CharacterRotation.Broadcast(OwnerCharacter->GetActorRotation());
 	ADelegateHelper::Transmitter_ControlRotation.Broadcast(ControlRotation);
 
 
@@ -190,12 +204,13 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 void ULocomotionComponent::OnMovementButtonReleased(const FInputActionValue& Value)
 {
 	ADelegateHelper::Transmitter_Velocity.Broadcast(FVector::ZeroVector);
+	ADelegateHelper::OnMovementStop.Broadcast();
 }
 
 void ULocomotionComponent::EnhancedLook(const FInputActionValue& Value)
 {
 
-	if(OwnerPawn && OwnerController ==nullptr)
+	if(OwnerCharacter && OwnerController ==nullptr)
 	{
 		if(GEngine)
 		{
@@ -203,11 +218,21 @@ void ULocomotionComponent::EnhancedLook(const FInputActionValue& Value)
 		}
 		return	;
 	}
-	OwnerPawn->AddControllerYawInput(Value[0]*CharacterMovementData.TurnRate);
-	OwnerPawn->AddControllerPitchInput(Value[1]*CharacterMovementData.LookUpRate);
+	OwnerCharacter->AddControllerYawInput(Value[0]*CharacterMovementData.TurnRate);
+	OwnerCharacter->AddControllerPitchInput(Value[1]*CharacterMovementData.LookUpRate);
 
 	//ADelegateHelper::Transmitter_ControlRotation.Broadcast(OwnerController->GetControlRotation());
 	
+}
+
+void ULocomotionComponent::OnSprintPressed(const FInputActionValue& Value)
+{
+	OwnerCharacterMovementComponent->MaxWalkSpeed=MaxMovementSpeed.SprintSpeed;
+}
+
+void ULocomotionComponent::OnSprintReleased(const FInputActionValue& Value)
+{
+	OwnerCharacterMovementComponent->MaxWalkSpeed=MaxMovementSpeed.JogSpeed;
 }
 
 bool ULocomotionComponent::BindContextWithSubsystem()
@@ -242,12 +267,12 @@ bool ULocomotionComponent::BindContextWithSubsystem()
 
 bool ULocomotionComponent::BindFunctionWithInputAction(UInputComponent* PlayerInputComponent)
 {
-	if(OwnerPawn == nullptr)
+	if(OwnerCharacter == nullptr)
 	{
 		
 		if(GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("OwnerPawn NOT FOUND "));
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("OwnerCharacter NOT FOUND "));
 		}
 		return false;
 			
@@ -266,7 +291,9 @@ bool ULocomotionComponent::BindFunctionWithInputAction(UInputComponent* PlayerIn
 	
 	EIC->BindAction(MovementAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedMove);
 	EIC->BindAction(MovementAction,ETriggerEvent::Completed,this,&ULocomotionComponent::OnMovementButtonReleased);
-	EIC	->BindAction(LookingAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedLook );
+	EIC->BindAction(LookingAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::EnhancedLook );
+	EIC->BindAction(SprintAction,ETriggerEvent::Triggered,this,&ULocomotionComponent::OnSprintPressed);
+	EIC->BindAction(SprintAction,ETriggerEvent::Completed,this,&ULocomotionComponent::OnSprintReleased);
 	
 	return true;
 }

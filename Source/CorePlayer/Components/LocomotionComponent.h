@@ -9,7 +9,9 @@
 #include "CoreMinimal.h"
 #include "InputActionValue.h"
 #include "Components/ActorComponent.h"
+#include "CorePlugin/Data/AnimationData.h"
 #include "CorePlugin/Data/CharacterMovementData.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "LocomotionComponent.generated.h"
 
@@ -32,9 +34,11 @@ public:
 public:
 	
 	UPROPERTY(VisibleAnywhere , BlueprintReadWrite,Category="Reference")
-	APawn* OwnerPawn;
+	ACharacter* OwnerCharacter;
 	UPROPERTY(VisibleAnywhere , BlueprintReadWrite,Category="Reference")
 	APlayerController*OwnerController;
+	UPROPERTY()
+	UCharacterMovementComponent*OwnerCharacterMovementComponent;
 	
 	UPROPERTY(EditAnywhere , BlueprintReadWrite,Category="Defaults")
 	FCharacterMovementData DefaultMovementData;
@@ -46,6 +50,8 @@ public:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Input Actions")
 	class UInputAction* LookingAction ;
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Input Actions")
+	class UInputAction* SprintAction; 
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Input Actions")
 	class UInputAction* JumpAction ;
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Input Actions")
 	class UInputAction* FireAction ;
@@ -55,11 +61,14 @@ public:
 	class UInputMappingContext*BaseMappingContext;
 	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category="Defaults")
 	int32 BaseMappingPriority = 0;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="AnimInstance")
+	FMovementSpeed MaxMovementSpeed;
 
 	
 public:
 	//Access Owner and Setup data
 	void GetOwnerReference ();
+	void SetCharacterDefaultSpeed ();
 	void ConfigureInputAction();
 	void ConfigureMappingContext();
 	void ConfigureInputActionWithKey();
@@ -87,6 +96,10 @@ public:
 	void OnMovementButtonReleased (const FInputActionValue & Value);
 	UFUNCTION()
 	void EnhancedLook (const FInputActionValue & Value);
+	UFUNCTION()
+	void OnSprintPressed (const FInputActionValue & Value);
+	UFUNCTION()
+	void OnSprintReleased (const FInputActionValue & Value);
 
 
 	

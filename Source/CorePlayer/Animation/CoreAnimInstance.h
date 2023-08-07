@@ -8,10 +8,12 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "CorePlayer/Character/CoreCharacter.h"
 #include "CorePlugin/Data/AnimationData.h"
 #include "CoreAnimInstance.generated.h"
 
-
+UDELEGATE(BlueprintAuthorityOnly)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAnimatonDataChanges , FCalculatedAnimationData,AnimData);
 class FAnimationCalculator;
 struct FCoreAnimInstanceProxy;
 UCLASS()
@@ -26,6 +28,8 @@ public:
 	virtual void NativeInitializeAnimation() override;
 	//virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeUninitializeAnimation() override;
+
+	void Init ();
 
 	// Override the proxy functions
 	//virtual FAnimInstanceProxy* CreateAnimInstanceProxy() override;
@@ -54,11 +58,20 @@ public:
 	void Receiver_CrouchStatus (bool InValue);
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_InAirStatus (bool InValue);
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	void Receiver_OnMovementStop ();
+
+	UFUNCTION(BlueprintPure, Category = "DataGetter" , meta = (MD_ThreadSafe))
+	FCalculatedAnimationData GetData ();
+	
+	FMovementSpeed MaxMovementSpeed;
+
+	UPROPERTY(BlueprintAssignable, Category = "Animation")
+	FOnAnimatonDataChanges Transmitter_AnimationData;
 
 	
 protected:
 	
-
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Data")
 	FRawAnimationData RawAnimationData;
 	
@@ -68,15 +81,24 @@ protected:
 	// A critical section that is used to synchronize access to the shared variables
 	FCriticalSection CriticalSection;
 
+	// Declare a thread safe counter object
+	FThreadSafeCounter CriticalSectionCounter;
+	
 	// A pointer to an instance of FAnimationCalculator that runs on a custom thread
 	FAnimationCalculator* AnimationCalculator;
 
 	// A pointer to an instance of FRunnableThread that manages the custom thread
 	FRunnableThread* AnimationCalculatorThread;
 
+	
+
 
 protected:
 
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="Data")
+	UCurveFloat* CharacterTurnCurve;
+	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="AnimInstance")
 	float CharacterYawInterpTime;
 	
@@ -112,7 +134,9 @@ private:
 	/** References */
 	
 	UPROPERTY()
-	ACharacter*OwnerCharacter;
+	ACoreCharacter*OwnerCharacter;
+	UPROPERTY()
+	ACorePlayerController*OwnerController;
 	
 	// A pointer to the custom proxy class
 	FCoreAnimInstanceProxy* Proxy;

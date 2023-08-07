@@ -6,10 +6,14 @@
 
 
 #include "CoreAnimInstance.h"
+
+#include "CorePlayer/Player/CorePlayerController.h"
 #include "Proxy/CoreAnimInstanceProxy.h"
 #include "CorePlugin/Helpers/DelegateHelper.h"
 #include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Misc/ScopeTryLock.h"
 #include "Threads/AnimationCalculator.h"
 
 UCoreAnimInstance::UCoreAnimInstance()
@@ -19,6 +23,8 @@ UCoreAnimInstance::UCoreAnimInstance()
 
 	//RawAnimationData=DefaultAnimationData;
 	CharacterYawInterpTime = 2.0;
+
+
 }
 
 void UCoreAnimInstance::NativeInitializeAnimation()
@@ -28,12 +34,13 @@ void UCoreAnimInstance::NativeInitializeAnimation()
 	// Initialize the proxy with this anim instance
 	//Proxy = &Super::GetProxyOnGameThread<FCoreAnimInstanceProxy>();
 
-	OwnerCharacter = Cast<ACharacter>(GetOwningActor());
+	Init();
+	
 
 	/** Creating Runnable Thread */
 	
 	// Create a new instance of FAnimationCalculator and pass it references to the shared raw data variable, the shared calculated data variable, and the critical section
-	AnimationCalculator = new FAnimationCalculator(RawAnimationData, CalculatedAnimationData, CriticalSection);
+	AnimationCalculator = new FAnimationCalculator(RawAnimationData, CalculatedAnimationData, CriticalSection,CriticalSectionCounter,this );
 
 	// Create a new instance of FRunnableThread and pass it a pointer to the FAnimationCalculator instance and a name for the thread
 	AnimationCalculatorThread = FRunnableThread::Create(AnimationCalculator, TEXT("AnimationCalculatorThread"));
@@ -78,6 +85,30 @@ void UCoreAnimInstance::NativeUninitializeAnimation()
 		AnimationCalculator = nullptr;
 	}
 }
+
+void UCoreAnimInstance::Init()
+{
+	OwnerCharacter = Cast<ACoreCharacter>(GetOwningActor());
+	OwnerController=Cast<ACorePlayerController>(UGameplayStatics::GetPlayerController(this,0));
+	if(OwnerCharacter ==nullptr)
+	{
+		if(GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Owner IS Not Found Anim instance Init Failed "));
+		}
+		return;
+	}
+	if(OwnerController ==nullptr)
+	{
+		if(GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Controller IS Not Found Anim instance Init Failed "));
+		}
+		return;
+	}
+	MaxMovementSpeed=OwnerController->GetLocomotionComponent()->MaxMovementSpeed;
+}
+
 /*
 FAnimInstanceProxy* UCoreAnimInstance::CreateAnimInstanceProxy()
 {
@@ -107,16 +138,29 @@ void UCoreAnimInstance::Receiver_Velocity(FVector InValue)
 	CriticalSection.Unlock();
 
 	// Set the new data flag to true
-	AnimationCalculator->NewDataAvailable = true;
-	
-/*
-	FRotator ActorRot =RawAnimationData.CharacterRotation;
-	FRotator TargetRot = FRotator(ActorRot.Pitch, RawAnimationData.ControllerRotation.Yaw, ActorRot.Roll);
+	AnimationCalculator->VelocityChangeEvent->Trigger();
+
+	Transmitter_AnimationData.Broadcast(GetData());
+
+	//FRotator ActorRot =RawAnimationData.CharacterRotation;
+	/*
+	if(OwnerCharacter)
+	{
+		if(CharacterTurnCurve)
+		{
+			float Delta = CharacterTurnCurve->GetFloatValue(CalculatedAnimationData.Delta_Movement_Controller.Yaw);
+			FRotator TargetRot = FRotator(ActorRot.Pitch, RawAnimationData.ControllerRotation.Yaw+Delta, ActorRot.Roll);
+		}
+		else
+		{
+
+			FRotator TargetRot = FRotator(ActorRot.Pitch, RawAnimationData.ControllerRotation.Yaw, ActorRot.Roll);
 	
 
-	FRotator NewCharacterRotation = FMath::RInterpTo(ActorRot, TargetRot, GetWorld()->GetDeltaSeconds(), CharacterYawInterpTime);
-	//OwnerCharacter->SetActorRotation(NewCharacterRotation);*/
-	
+			FRotator NewCharacterRotation = FMath::RInterpTo(ActorRot, TargetRot, GetWorld()->GetDeltaSeconds(), CharacterYawInterpTime);
+			OwnerCharacter->SetActorRotation(NewCharacterRotation);
+		}
+	}*/
 	
 }
 
@@ -150,6 +194,27 @@ void UCoreAnimInstance::Receiver_CrouchStatus(bool InValue)
 void UCoreAnimInstance::Receiver_InAirStatus(bool InValue)
 {
 	RawAnimationData.bIsInAir=InValue;
+}
+
+void UCoreAnimInstance::Receiver_OnMovementStop()
+{
+	// Set the new data flag to true
+	AnimationCalculator->NewDataAvailable = false;
+}
+
+FCalculatedAnimationData UCoreAnimInstance::GetData()
+{
+
+	if(CriticalSectionCounter.GetValue() == 0)
+	{
+		// Lock acquired, access the data
+		return CalculatedAnimationData;
+	}
+	else
+	{
+
+		return AnimationCalculator->LastFrameData;
+	}
 }
 
 
