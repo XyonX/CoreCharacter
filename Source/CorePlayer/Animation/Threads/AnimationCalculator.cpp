@@ -10,7 +10,7 @@ bool FAnimationCalculator::Init()
 
 {
 	// Create an event with manual reset mode
-	VelocityChangeEvent = FGenericPlatformProcess::GetSynchEventFromPool(true);
+	Event_OnVelocityChange = FGenericPlatformProcess::GetSynchEventFromPool(true);
 	
 	MaxMovementSpeed=AnimInstanceRef->MaxMovementSpeed;
 	
@@ -28,7 +28,7 @@ uint32 FAnimationCalculator::Run()
 		}
 
 		// WaitFor The velocity event call
-		VelocityChangeEvent->Wait();
+		Event_OnVelocityChange->Wait();
 
 		// Increment the counter before locking the critical section
 		CriticalSectionCounter->Increment();
@@ -36,12 +36,12 @@ uint32 FAnimationCalculator::Run()
 		// Lock the critical section before accessing the shared variables
 		FScopeLock ScopeLock(CriticalSection);
 		
-		Calculate();
+		Calculate_VelocityData();
 
 		LastFrameData = *SharedCalculatedData;
 
 		// Reset the event after performing the calculation
-		VelocityChangeEvent->Reset();
+		Event_OnVelocityChange->Reset();
 		
 		// Sleep for 10 milliseconds without generating stats data
 		FPlatformProcess::SleepNoStats(0.01f);
@@ -58,37 +58,65 @@ void FAnimationCalculator::Stop()
 	//StopTaskCounter.Increment();
 	StopSignal=true;
 	// Signal the event to wake up the thread
-	VelocityChangeEvent->Trigger();
+	Event_OnVelocityChange->Trigger();
 }
 
-void FAnimationCalculator::Calculate()
+void FAnimationCalculator::Calculate_VelocityData()
 {
 	
 	Velocity = SharedRawData-> Velocity.Size();
 	SharedCalculatedData->Velocity=Velocity;
 	CurrentMovementStatus=EMovementStatus::Idle;
+
+	
 	// Check if the velocity is not zero to avoid division by zero errors
 	if (!FMath::IsNearlyZero(Velocity))
 	{
 		FRotator VelocityRotation =UKismetMathLibrary::MakeRotFromX(SharedRawData->Velocity);
-		FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(VelocityRotation,SharedRawData->ControllerRotation);
-		
-		SharedCalculatedData->Delta_Movement_Controller = DeltaRotation;
+		SharedCalculatedData->VelocityRotation= VelocityRotation;
+		SharedCalculatedData->DeltaR_MovCtlr = UKismetMathLibrary::NormalizedDeltaRotator(VelocityRotation,SharedRawData->ControllerRotation);
+		SharedCalculatedData->DeltaR_CharCtlr = UKismetMathLibrary::NormalizedDeltaRotator (SharedRawData->CharacterRotation,SharedRawData->ControllerRotation);
+		CalculateMovementStatus();
+		CalculateMovementDirection();
+	}
+}
 
-		if(Velocity<=MaxMovementSpeed.WalkSpeed)
-		{
-			CurrentMovementStatus=EMovementStatus::Walking;
-		}
-		else if(Velocity<=MaxMovementSpeed.JogSpeed)
-		{
-			CurrentMovementStatus=EMovementStatus::Jogging;
-		}
-		else if(Velocity<=MaxMovementSpeed.SprintSpeed)
-		{
-			CurrentMovementStatus=EMovementStatus::Sprinting;
-		}
-		
+void FAnimationCalculator::CalculateMovementStatus()
+{
+	if(Velocity<=MaxMovementSpeed.WalkSpeed)
+	{
+		CurrentMovementStatus=EMovementStatus::Walking;
+	}
+	else if(Velocity<=MaxMovementSpeed.JogSpeed)
+	{
+		CurrentMovementStatus=EMovementStatus::Jogging;
+	}
+	else if(Velocity<=MaxMovementSpeed.SprintSpeed)
+	{
+		CurrentMovementStatus=EMovementStatus::Sprinting;
 	}
 	SharedCalculatedData->MovementStatus=CurrentMovementStatus;
-	
 }
+
+void FAnimationCalculator::CalculateMovementDirection()
+{
+	float DeltaYaw = SharedCalculatedData->DeltaR_MovCtlr.Yaw;
+
+	if (-20 < DeltaYaw && DeltaYaw < 20)
+	{
+		SharedCalculatedData->MovementDirection = EMovementDirection::Forward;
+	}
+	else if (-110 < DeltaYaw && DeltaYaw < -70)
+	{
+		SharedCalculatedData->MovementDirection = EMovementDirection::Left;
+	}
+	else if (70 < DeltaYaw && DeltaYaw < 90)
+	{
+		SharedCalculatedData->MovementDirection = EMovementDirection::Right;
+	}
+	else if (DeltaYaw < -160 || DeltaYaw > 160)
+	{
+		SharedCalculatedData->MovementDirection = EMovementDirection::Backward;
+	}
+}
+

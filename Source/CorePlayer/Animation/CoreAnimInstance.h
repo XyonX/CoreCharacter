@@ -12,6 +12,8 @@
 #include "CorePlugin/Data/AnimationData.h"
 #include "CoreAnimInstance.generated.h"
 
+class UAnimationDataManager;
+
 UDELEGATE(BlueprintAuthorityOnly)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAnimatonDataChanges , FCalculatedAnimationData,AnimData);
 class FAnimationCalculator;
@@ -41,7 +43,7 @@ public:
 
 	
 	/** Animation data Receiver */
-	
+	/*
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_AnimationData (FCalculatedAnimationData InAnimData);
 	UFUNCTION(BlueprintCallable, Category = "Animation")
@@ -59,18 +61,29 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void Receiver_InAirStatus (bool InValue);
 	UFUNCTION(BlueprintCallable, Category = "Animation")
-	void Receiver_OnMovementStop ();
+	void Receiver_OnMovementStop ();*/
 
 	UFUNCTION(BlueprintPure, Category = "DataGetter" , meta = (MD_ThreadSafe))
 	FCalculatedAnimationData GetData ();
+
+	//Gamethread calculation
+	void GamethreadDataCalculator_Velocity ();
+
+	//Gamethread calculation
+	void GamethreadDataCalculator_Rotation ();
 	
+
+public:
+
+	
+	// Public Vars
 	FMovementSpeed MaxMovementSpeed;
 
 	UPROPERTY(BlueprintAssignable, Category = "Animation")
 	FOnAnimatonDataChanges Transmitter_AnimationData;
 
 	
-protected:
+public:
 	
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Data")
 	FRawAnimationData RawAnimationData;
@@ -140,6 +153,9 @@ private:
 	
 	// A pointer to the custom proxy class
 	FCoreAnimInstanceProxy* Proxy;
+
+	UPROPERTY()
+	UAnimationDataManager*AnimationDataManager;
 	
 	
 };

@@ -9,9 +9,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
+#include "CorePlayer/Animation/DataManager/AnimationDataManager.h"
 #include "CorePlayer/Character/CoreCharacterEXTENDED.h"
 #include "CorePlugin/Helpers/DelegateHelper.h"
 #include "CorePlugin/Helpers/InputHandlerHelper.h"
+#include "CorePlugin/Helpers/TimerHandlerHelper.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -28,6 +30,8 @@ ULocomotionComponent::ULocomotionComponent()
 	MaxMovementSpeed.WalkSpeed=200;
 	MaxMovementSpeed.JogSpeed=400;
 	MaxMovementSpeed.SprintSpeed=600;
+	bIsMoving=false;
+	bIsRotating=false;
 }
 
 
@@ -166,7 +170,6 @@ void ULocomotionComponent::LookUp(float Value)
 
 void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 {
-
 	
 	if(OwnerCharacter && OwnerController ==nullptr)
 	{
@@ -189,22 +192,25 @@ void ULocomotionComponent::EnhancedMove(const FInputActionValue& Value)
 
 	MovementComponent->AddInputVector(ForwardDirection*Value[0]);
 	MovementComponent->AddInputVector(RightDirection*Value[1]);
-
-
 	
-	ADelegateHelper::Transmitter_Velocity.Broadcast(OwnerCharacter->GetMovementComponent()->Velocity);
-	ADelegateHelper::Transmitter_CharacterRotation.Broadcast(OwnerCharacter->GetActorRotation());
-	ADelegateHelper::Transmitter_ControlRotation.Broadcast(ControlRotation);
 
+	if(!bIsMoving)
+	{
+		bIsMoving=true;
+		
+		float TimerRate = 1.0f / 60.0f; // Interval for 60 FPS (approx. 0.0167 seconds)
+		bool bLoop = true; // Set to true if you want the timer to loop
+		float FirstDelay = 0.0f; // Initial delay before the first timer call (optional)
 
+		GetWorld()->GetTimerManager().SetTimer(ATimerHandlerHelper::OnMovementTimer,ADelegateHelper::OnMovement, 0.016, bLoop, FirstDelay);
+	}
 
 
 }
 
 void ULocomotionComponent::OnMovementButtonReleased(const FInputActionValue& Value)
 {
-	ADelegateHelper::Transmitter_Velocity.Broadcast(FVector::ZeroVector);
-	ADelegateHelper::OnMovementStop.Broadcast();
+	GetWorld()->GetTimerManager().ClearTimer(ATimerHandlerHelper::OnMovementTimer); 
 }
 
 void ULocomotionComponent::EnhancedLook(const FInputActionValue& Value)
@@ -221,7 +227,16 @@ void ULocomotionComponent::EnhancedLook(const FInputActionValue& Value)
 	OwnerCharacter->AddControllerYawInput(Value[0]*CharacterMovementData.TurnRate);
 	OwnerCharacter->AddControllerPitchInput(Value[1]*CharacterMovementData.LookUpRate);
 
-	//ADelegateHelper::Transmitter_ControlRotation.Broadcast(OwnerController->GetControlRotation());
+	if(!bIsRotating)
+	{
+		bIsRotating=true;
+		
+		float TimerRate = 1.0f / 60.0f; // Interval for 60 FPS (approx. 0.0167 seconds)
+		bool bLoop = true; // Set to true if you want the timer to loop
+		float FirstDelay = 0.0f; // Initial delay before the first timer call (optional)
+
+		GetWorld()->GetTimerManager().SetTimer(ATimerHandlerHelper::OnRotationTimer,ADelegateHelper::OnMovement, 0.016, bLoop, FirstDelay);
+	}
 	
 }
 

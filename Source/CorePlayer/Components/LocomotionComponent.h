@@ -102,7 +102,9 @@ public:
 	void OnSprintReleased (const FInputActionValue & Value);
 
 
-	
+	//local bool
+	bool bIsMoving;
+	bool bIsRotating;
 
 	
 

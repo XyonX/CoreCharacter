@@ -21,7 +21,9 @@ public:
 
 
 	//Receiver  function
+	UFUNCTION()
 	void Receiver_LocomotionDataCalculator ();
+	UFUNCTION()
 	void Receiver_RotationalDataCalculator ();
 
 private:

@@ -10,11 +10,13 @@
 #include "CorePlayer/Player/CorePlayerController.h"
 #include "Proxy/CoreAnimInstanceProxy.h"
 #include "CorePlugin/Helpers/DelegateHelper.h"
+#include "DataManager/AnimationDataManager.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Misc/ScopeTryLock.h"
 #include "Threads/AnimationCalculator.h"
+
 
 UCoreAnimInstance::UCoreAnimInstance()
 : RawAnimationData() // Initializes the RawAnimationData struct with default values (e.g., 0.0f and false)
@@ -22,7 +24,8 @@ UCoreAnimInstance::UCoreAnimInstance()
 {
 
 	//RawAnimationData=DefaultAnimationData;
-	CharacterYawInterpTime = 2.0;
+	CharacterYawInterpTime = 5.0;
+	
 
 
 }
@@ -45,7 +48,11 @@ void UCoreAnimInstance::NativeInitializeAnimation()
 	// Create a new instance of FRunnableThread and pass it a pointer to the FAnimationCalculator instance and a name for the thread
 	AnimationCalculatorThread = FRunnableThread::Create(AnimationCalculator, TEXT("AnimationCalculatorThread"));
 
-	/** Binding Delegates */ 
+	AnimationDataManager=NewObject<UAnimationDataManager>(this);
+	AnimationDataManager->Init(this,OwnerCharacter,OwnerController);
+
+	/** Binding Delegates */
+	/*
 	ADelegateHelper::Transmitter_AnimationData.AddDynamic(this,&UCoreAnimInstance::Receiver_AnimationData);
 	ADelegateHelper::Transmitter_Velocity.AddDynamic(this,&UCoreAnimInstance::Receiver_Velocity);
 	ADelegateHelper::Transmitter_CharacterWorldLocation.AddDynamic(this,&UCoreAnimInstance::Receiver_CharacterWorldLocation);
@@ -56,7 +63,7 @@ void UCoreAnimInstance::NativeInitializeAnimation()
 
 	ADelegateHelper::Transmitter_JumpingStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_JumpingStatus);
 	ADelegateHelper::Transmitter_CrouchStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_CrouchStatus);
-	ADelegateHelper::Transmitter_InAirStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_InAirStatus);
+	ADelegateHelper::Transmitter_InAirStatus.AddDynamic(this,&UCoreAnimInstance::Receiver_InAirStatus);*/
 }
 /*
 void UCoreAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
@@ -126,81 +133,6 @@ FCoreAnimInstanceProxy* UCoreAnimInstance::GetProxyOnGameThread()
 	return &Super::GetProxyOnGameThread<FCoreAnimInstanceProxy>();
 }
 */
-void UCoreAnimInstance::Receiver_AnimationData(FCalculatedAnimationData InAnimData)
-{
-	
-}
-
-void UCoreAnimInstance::Receiver_Velocity(FVector InValue)
-{
-	CriticalSection.Lock();
-		RawAnimationData.Velocity =InValue;
-	CriticalSection.Unlock();
-
-	// Set the new data flag to true
-	AnimationCalculator->VelocityChangeEvent->Trigger();
-
-	Transmitter_AnimationData.Broadcast(GetData());
-
-	//FRotator ActorRot =RawAnimationData.CharacterRotation;
-	/*
-	if(OwnerCharacter)
-	{
-		if(CharacterTurnCurve)
-		{
-			float Delta = CharacterTurnCurve->GetFloatValue(CalculatedAnimationData.Delta_Movement_Controller.Yaw);
-			FRotator TargetRot = FRotator(ActorRot.Pitch, RawAnimationData.ControllerRotation.Yaw+Delta, ActorRot.Roll);
-		}
-		else
-		{
-
-			FRotator TargetRot = FRotator(ActorRot.Pitch, RawAnimationData.ControllerRotation.Yaw, ActorRot.Roll);
-	
-
-			FRotator NewCharacterRotation = FMath::RInterpTo(ActorRot, TargetRot, GetWorld()->GetDeltaSeconds(), CharacterYawInterpTime);
-			OwnerCharacter->SetActorRotation(NewCharacterRotation);
-		}
-	}*/
-	
-}
-
-void UCoreAnimInstance::Receiver_CharacterWorldLocation(FVector InValue)
-{
-	
-	RawAnimationData.CharacterLocation=InValue;
-	
-}
-
-void UCoreAnimInstance::Receiver_ControlRotation(FRotator InValue)
-{
-	RawAnimationData.ControllerRotation =InValue;
-}
-
-void UCoreAnimInstance::Receiver_CharacterRotation(FRotator InValue)
-{
-	RawAnimationData.CharacterRotation= InValue;
-}
-
-void UCoreAnimInstance::Receiver_JumpingStatus(bool InValue)
-{
-	RawAnimationData.bIsJumping=InValue;
-}
-
-void UCoreAnimInstance::Receiver_CrouchStatus(bool InValue)
-{
-	RawAnimationData.bIsCrouching=InValue;
-}
-
-void UCoreAnimInstance::Receiver_InAirStatus(bool InValue)
-{
-	RawAnimationData.bIsInAir=InValue;
-}
-
-void UCoreAnimInstance::Receiver_OnMovementStop()
-{
-	// Set the new data flag to true
-	AnimationCalculator->NewDataAvailable = false;
-}
 
 FCalculatedAnimationData UCoreAnimInstance::GetData()
 {
@@ -217,5 +149,11 @@ FCalculatedAnimationData UCoreAnimInstance::GetData()
 	}
 }
 
+void UCoreAnimInstance::GamethreadDataCalculator_Velocity()
+{
+	
+}
+
 
 // Add more functions and logic for other animation calculations if needed
+//GEngine->AddOnScreenDebugMessage(-1,5,FColor::Red,FString::Printf(TEXT("The Delta yaw is : %f"),Controller_Characetr_Delta.Yaw));

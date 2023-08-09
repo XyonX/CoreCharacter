@@ -21,8 +21,9 @@ void UAnimationDataManager::Init(UCoreAnimInstance* InAnimInstance, ACoreCharact
 	CoreController=InPlayerController;
 	CharacterMovementComponent=CoreCharacter->GetCharacterMovement();
 
-	ADelegateHelper::OnMovement.AddDynamic(this,&UAnimationDataManager::Receiver_LocomotionDataCalculator);
-	ADelegateHelper::OnMovement.AddDynamic(this,&UAnimationDataManager::Receiver_RotationalDataCalculator);
+	//ADelegateHelper::OnMovement.AddDynamic(this,&UAnimationDataManager::Receiver_LocomotionDataCalculator);
+	//ADelegateHelper::OnMovement.AddDynamic(this,&UAnimationDataManager::Receiver_RotationalDataCalculator);
+	
 	
 }
 

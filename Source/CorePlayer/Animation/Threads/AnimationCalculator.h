@@ -24,8 +24,8 @@ public:
     }
     ~FAnimationCalculator()
     {    // Return the event to the pool
-        FGenericPlatformProcess::ReturnSynchEventToPool(VelocityChangeEvent);
-        VelocityChangeEvent = nullptr; }
+        FGenericPlatformProcess::ReturnSynchEventToPool(Event_OnVelocityChange);
+        Event_OnVelocityChange = nullptr; }
 
     // Override the Init function
     virtual bool Init() override;
@@ -35,7 +35,11 @@ public:
     virtual void Stop() override;
 
 
-    void Calculate ();
+    void Calculate_VelocityData ();
+    void Calculate_Rotation ();
+
+    void CalculateMovementStatus();
+    void CalculateMovementDirection ();
 
     UCoreAnimInstance*AnimInstanceRef;
     
@@ -63,7 +67,10 @@ public:
     FThreadSafeBool NewDataAvailable;
     
     // Declare an event to indicate if there is new data available
-    FEvent* VelocityChangeEvent;
+    FEvent* Event_OnVelocityChange;
+
+    // Declare an event to indicate if there is new data available
+    FEvent* Event_OnRotationChange;
     
 
 private:
